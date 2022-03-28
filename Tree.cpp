@@ -1,25 +1,26 @@
-#include "TreeMap.h"
+#include "Tree.hpp"
 
 /*_______________________NODE_________________________________*/
 
 template <class T1, class T2>
-TreeMap<T1, T2>::TreeNode::TreeNode(const T1& key, const T2& value, const TreeNode* parent)
+Map<T1, T2>::Node::Node(const T1& key, const T2& value, const int height, const Node* parent)
 	: left(nullptr), right(nullptr), parent(parent)
 {
 	this->key = key;
 	this->value = value;
+	this->height = height;
 }
 
 /*_______________________ITERATOR_____________________________*/
 
 
 template<class T1, class T2>
-TreeMap<T1, T2>::TreeIterator::TreeIterator(const TreeNode* pointer)
+Map<T1, T2>::Iterator::Iterator(const Node* pointer)
 	: pointer(pointer)
 {}
 
 template<class T1, class T2>
-TreeMap<T1, T2>::TreeIterator& TreeMap<T1, T2>::TreeIterator::operator ++()
+Map<T1, T2>::Iterator& Map<T1, T2>::Iterator::operator ++()
 {
 	if (pointer == nullptr)
 	{
@@ -52,7 +53,7 @@ TreeMap<T1, T2>::TreeIterator& TreeMap<T1, T2>::TreeIterator::operator ++()
 }
 
 template<class T1, class T2>
-TreeMap<T1, T2>::TreeIterator& TreeMap<T1, T2>::TreeIterator::operator --()
+Map<T1, T2>::Iterator& Map<T1, T2>::Iterator::operator --()
 {
 	if (pointer == nullptr)
 	{
@@ -85,19 +86,19 @@ TreeMap<T1, T2>::TreeIterator& TreeMap<T1, T2>::TreeIterator::operator --()
 }
 
 template<class T1, class T2>
-bool TreeMap<T1, T2>::TreeIterator::operator ==(const TreeIterator& iter) const
+bool Map<T1, T2>::Iterator::operator ==(const Iterator& iter) const
 {
 	return *this == *iter;
 }
 
 template<class T1, class T2>
-bool TreeMap<T1, T2>::TreeIterator::operator !=(const TreeIterator& iter) const
+bool Map<T1, T2>::Iterator::operator !=(const Iterator& iter) const
 {
 	return *this != *iter;
 }
 
 template<class T1, class T2>
-TreeMap<T1, T2>::TreeNode& TreeMap<T1, T2>::TreeIterator::operator *()
+Map<T1, T2>::Node& Map<T1, T2>::Iterator::operator *()
 {
 	return *pointer;
 }
@@ -105,64 +106,83 @@ TreeMap<T1, T2>::TreeNode& TreeMap<T1, T2>::TreeIterator::operator *()
 /*________________________MAP_________________________________*/
 
 template <class T1, class T2>
-TreeMap<T1, T2>::TreeMap() 
-	: root(nullptr), height(0) 
-{}
-
-template <class T1, class T2>
-TreeMap<T1, T2>::TreeMap(const TreeMap& map) 
+Map<T1, T2>::Map() 
 	: root(nullptr)
 {}
 
 template <class T1, class T2>
-TreeMap<T1, T2>::~TreeMap()
+Map<T1, T2>::Map(const Map& map) 
+	: root(nullptr)
+{}
+
+template <class T1, class T2>
+Map<T1, T2>::~Map()
 {
 	if (root)
 		delete root;
 }
 
+template <class T1, class T2> template <class Functor>
+void Map<T1, T2>::traverse(Functor functor)
+{
+	for (auto iter : begin())
+	{
+		functor(iter);
+	}
+}
+
 template <class T1, class T2>
-TreeMap<T1, T2>::TreeIterator TreeMap<T1, T2>::begin()
+Map<T1, T2>::Iterator Map<T1, T2>::begin()
 {
 	Node temp = root;
 	while (temp->left)
 		temp = temp->left;
-	return TreeIterator(temp);
+	return Iterator(temp);
 }
 
 template <class T1, class T2>
-TreeMap<T1, T2>::TreeIterator TreeMap<T1, T2>::end()
+Map<T1, T2>::Iterator Map<T1, T2>::end()
 {
-	return TreeIterator(nullptr);
+	return Iterator(nullptr);
 }
 
 template <class T1, class T2>
-void TreeMap<T1, T2>::print() const
+void Map<T1, T2>::print(const Node& node) const
 {
-
+	std::cout << node.key << ':' << node.key << std::endl;
 }
 
-
 template <class T1, class T2>
-bool TreeMap<T1, T2>::insert(const T1& key, const T2& value)
+bool Map<T1, T2>::insert(const T1& key, const T2& value)
 {
+	for (auto iter : begin())
+	{
+		if ((*iter).key == key)
+			return false;
+	}
 	return false;
 }
 
-
 template <class T1, class T2>
-const T2& TreeMap<T1, T2>::find(const T1& key) const
+const T2& Map<T1, T2>::find(const T1& key) const
 {
 	for (auto iter : begin())
 	{
 		if ((*iter).key == key)
 			return iter->value;
 	}
-	throw "Object doesn't exist";
+	throw "[!] Object with this key doesn't exist [!]";
 }
 
 template <class T1, class T2>
-bool TreeMap<T1, T2>::erase(const T1& key)
+bool Map<T1, T2>::erase(const T1& key)
 {
-
+	for (auto iter : begin())
+	{
+		if ((*iter).key == key)
+			return true;
+	}
+	return false;
 }
+
+template Map<int, char>;

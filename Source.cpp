@@ -1,8 +1,9 @@
-#include "TreeMap.h"
-#include <iostream>
+#include "Tree.hpp"
+#include <map>
 
 int main()
 {
-	//TreeMap<char, std::string> map;
+	Map<int, char> map;
+	map.insert(4, 'd');
 	return 0;
 }

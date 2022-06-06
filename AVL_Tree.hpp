@@ -27,153 +27,150 @@ private:
 
 	}* root;
 
-	int height(Node* node)
+	int height(Node* node) const
 	{
-		return node ? node->height : -1;
+		return node ? node->height : 0;
 	}
 
-	Node* rotate_l(Node*& root)
+	int bfactor(Node* node) const
 	{
-		Node* root2 = root->left;
-		root->left = root2->right;
-		root2->right = root;
-		root->height = std::max(height(root->left), height(root->right)) + 1;
-		root2->height = std::max(height(root2->left), root->height) + 1;
-		return root2;
+		return height(node->right) - height(node->left);
 	}
 
-	Node* rotate_r(Node*& root)
+	void fix_height(Node* node)
 	{
-		Node* root2 = root->right;
-		root->right = root2->left;
-		root2->left = root;
-		root->height = std::max(height(root->left), height(root->right)) + 1;
-		root2->height = std::max(root->height, height(root2->right)) + 1;
-		return root2;
-	}
-	
-	Node* b_rotate_left(Node*& root)
-	{
-		root->left = rotate_r(root->left);
-		return rotate_l(root);
-	}
-	
-	Node* b_rotate_right(Node*& root)
-	{
-		root->right = rotate_l(root->right);
-		return rotate_r(root);
+		int left = height(node->left);
+		int right = height(node->right);
+		node->height = (left > right ? left : right) + 1;
 	}
 
-	Node* insert(const int& key, const std::string& value, Node*& node)
+	Node* rotate_right(Node* p) // правый поворот вокруг p
 	{
-		if (node == nullptr)
+		Node* q = p->left;
+		p->left = q->right;
+		q->right = p;
+		fix_height(p);
+		fix_height(q);
+		return q;
+	}
+
+	Node* rotate_left(Node* q) // левый поворот вокруг q
+	{
+		Node* p = q->right;
+		q->right = p->left;
+		p->left = q;
+		fix_height(q);
+		fix_height(p);
+		return p;
+	}
+
+	Node* balance(Node* node)
+	{
+		fix_height(node);
+		if (bfactor(node) == 2)
 		{
-			node = new Node(key, value);
-			return node;
+			if (bfactor(node->right) < 0)
+				node->right = rotate_right(node->right);
+			return rotate_left(node);
 		}
+		if (bfactor(node) == -2)
+		{
+			if (bfactor(node->left) > 0)
+				node->left = rotate_left(node->left);
+			return rotate_right(node);
+		}
+		return node; // балансировка не нужна
+	}
+
+	Node* insert(Node* node, const int& key, const std::string& value)
+	{
+		if (node == nullptr) 
+			return new Node(key, value);
 
 		if (key < node->key)
-		{
-			insert(key, value, node->left);
-			if ((height(node->left) - height(node->right)) == 2)
-			{
-				if (key < (node->left)->key)
-					node = rotate_l(node);
-				else
-					node = b_rotate_left(node);
-			}
-		}
+			node->left = insert(node->left, key, value);
 		else if (key > node->key)
-		{
-			insert(key, value, node->right);
-			if ((height(node->right) - height(node->left)) == 2)
-			{
-				if (key > (node->right)->key)
-					node = rotate_r(node);
-				else
-					node = b_rotate_right(node);
-			}
-		}
-		else
-			return nullptr;
+			node->right = insert(node->right, key, value);
 
-		node->height = std::max(height(node->left), height(node->right)) + 1;
+		return balance(node);
 	}
 
-	const Node* find(const int& key, const Node* node) const
+	const Node* find(const Node* node, const int& key) const
 	{
 		if (node == nullptr)
 			return nullptr;
 
 		if (key < node->key)
-			return find(key, node->left);
+			return find(node->left, key);
 		else if (key > node->key)
-			return find(key, node->right);
+			return find(node->right, key);
 		else
 			return node;
 	}
 
-	Node* erase(const int& key, Node* node)
+	Node* find_min(Node* node)
+	{
+		return node->left ? find_min(node->left) : node;
+	}
+
+	Node* remove_min(Node* node)
+	{
+		if (node->left == 0)
+			return node->right;
+		node->left = remove_min(node->left);
+		return balance(node);
+	}
+
+	Node* erase(Node* node, int key)
 	{
 		if (node == nullptr)
-			return node;
-
+			return 0;
+		
 		if (key < node->key)
-			node->left = erase(key, node->left);
+			node->left = erase(node->left, key);
 		else if (key > node->key)
-			node->right = erase(key, node->right);
+			node->right = erase(node->right, key);
 		else
 		{
-			if (node->left == nullptr || node->right == nullptr)
-			{
-				Node* temp = node->left;
-				if (temp == nullptr)
-					temp = node->right;
-
-				if (temp == nullptr)
-				{
-					temp = node;
-					node = nullptr;
-				}
-				else
-					*node = *temp;
-
-				delete temp;
-			}
-			else
-			{
-				*node = *node->left;
-				//node->right = erase(temp->key, node->right);
-			}
+			Node* q = node->left;
+			Node* r = node->right;
+			delete node;
+			if (!r) 
+				return q;
+			Node* min = find_min(r);
+			min->right = remove_min(r);
+			min->left = q;
+			return balance(min);
 		}
-		return node;
+		
+		return balance(node);
 	}
 
-	void print_debug(Node* ptr, int space) const
+	void print(const Node* ptr, int space = 0) const
 	{
 		if (ptr == NULL)
 			return;
 
-		space += 5;
-
-		print_debug(ptr->right, space);
+		print(ptr->right, space + 10);
 
 		std::cout << std::endl;
-		for (int i = 5; i < space; i++)
+		for (int i = 0; i < space; i++)
 			std::cout << " ";
 		std::cout << "[" << ptr->key << "][" << ptr->value << "]" << std::endl;
 
-		print_debug(ptr->left, space);
+		print(ptr->left, space + 10);
 	}
 
-	void print(const Node*& node) const
+	Node* copy_tree(Node* node)
 	{
-		if (node == NULL)
-			return;
-
-		print(node->left);
-		std::cout << "[" << node->key << "][" << node->value << "]" << std::endl;
-		print(node->right);
+		if (node == nullptr)
+		{
+			return nullptr;
+		}
+		Node* n = new Node(*node);
+		n->left = copy_tree(node->left);
+		n->right = copy_tree(node->right);
+		return n;
 	}
 
 	void delete_tree(Node* node)
@@ -188,9 +185,14 @@ private:
 
 public:
 	
-	AVL_Tree() 
-		: root(nullptr) 
+	AVL_Tree()
+		: root(nullptr)
 	{}
+
+	AVL_Tree(const AVL_Tree& tree)
+	{
+		root = copy_tree(tree.root);
+	}
 
 	~AVL_Tree()
 	{
@@ -199,15 +201,16 @@ public:
 
 	std::string find(const int& key) const
 	{
-		const Node* tmp = find(key, this->root);
+		const Node* tmp = find(this->root, key);
 		if (tmp == nullptr)
-			return "NULL";
+			return "<NULL>";
 		return tmp->value;
 	}
 
 	bool insert(const int& key, const std::string& value)
 	{
-		if (insert(key, value, this->root))
+		root = insert(this->root, key, value);
+		if (root)
 			return true;
 		return false;
 	}
@@ -215,19 +218,15 @@ public:
 	void print() const
 	{
 		print(root);
+		std::cout << "__________________________________________________\n";
 	}
 
-	void erase(const int& key)
+	bool erase(const int& key)
 	{
-		
-		if (erase(key, this->root))
+		root = erase(this->root, key);
+		if (root)
 			return true;
 		return false;
-	}
-
-	void print_debug() const
-	{
-		print_debug(root, 0);
 	}
 };
 #endif
